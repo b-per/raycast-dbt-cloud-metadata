@@ -1,0 +1,67 @@
+{
+  "$schema": "https://www.raycast.com/schemas/extension.json",
+  "name": "dbtc",
+  "title": "dbtc",
+  "description": "Commands for dbt Cloud",
+  "icon": "dbt-icon.png",
+  "author": "b-per",
+  "license": "MIT",
+  "commands": [
+    {
+      "name": "index",
+      "title": "Show Models Details",
+      "description": "Template for showing a static list and a detail view",
+      "mode": "view",
+      "preferences": [
+        {
+          "name": "dbtCloudAdminAPIKey",
+          "title": "dbt Cloud Admin API Key",
+          "description": "dbt Cloud Admin API Key",
+          "type": "password",
+          "required": true
+        },
+        {
+          "name": "dbtCloudMetadataAPIKey",
+          "title": "dbt Cloud Metadata API Key",
+          "description": "dbt Cloud Metadata API Key",
+          "type": "password",
+          "required": true
+        },
+        {
+          "name": "dbtCloudAccountID",
+          "title": "dbt Cloud Account ID",
+          "description": "Account ID of you dbt Cloud account",
+          "type": "textfield",
+          "required": true
+        },
+        {
+          "name": "dbtCloudProjectID",
+          "title": "dbt Cloud Project ID",
+          "description": "Project ID of your dbt Cloud project",
+          "type": "textfield",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "dependencies": {
+    "@raycast/api": "^1.38.1",
+    "node-fetch": "^3.2.9",
+    "tablemark": "^3.0.0"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.0.0",
+    "@typescript-eslint/parser": "^5.0.0",
+    "eslint": "^7.32.0",
+    "eslint-config-prettier": "^8.3.0",
+    "prettier": "^2.5.1",
+    "typescript": "^4.4.3"
+  },
+  "scripts": {
+    "build": "ray build -e dist",
+    "dev": "ray develop",
+    "fix-lint": "ray lint --fix",
+    "lint": "ray lint",
+    "publish": "ray publish"
+  }
+}
