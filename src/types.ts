@@ -151,3 +151,70 @@ export interface dbtGraphQLModelByEnv {
     modelByEnvironment: Array<dbtModelByEnv>;
   };
 }
+
+export interface dbtCloudConnection {
+  id: number;
+  account_id: number;
+  project_id: number;
+  name: string;
+  type: string;
+  created_by_id: number;
+  created_by_service_token_id?: any;
+  details: any;
+  state: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface dbtGitRepository {
+  id: number;
+  account_id: number;
+  project_id: number;
+  full_name: string;
+  remote_url: string;
+  remote_backend: string;
+  git_clone_strategy: string;
+  deploy_key_id: number;
+  repository_credentials_id?: any;
+  github_installation_id: number;
+  pull_request_url_template: string;
+  state: number;
+  created_at: string;
+  updated_at: string;
+  deploy_key: any;
+  github_repo: string;
+  name: string;
+  git_provider_id: number;
+  gitlab?: any;
+  git_provider?: any;
+}
+
+export interface dbtProject {
+  name: string;
+  account_id: number;
+  repository_id: number;
+  connection_id: number;
+  id: number;
+  created_at: string;
+  updated_at: string;
+  skipped_setup: boolean;
+  state: number;
+  dbt_project_subdirectory?: string;
+  connection: dbtCloudConnection;
+  repository: dbtGitRepository;
+  group_permissions: any[];
+  docs_job_id: number;
+  freshness_job_id: number;
+  docs_job: any;
+  freshness_job: any;
+}
+
+export interface dbtProjectAnswer {
+  status: {
+    code: number;
+    is_success: boolean;
+    user_message: string;
+    developer_message: string;
+  };
+  data: dbtProject;
+}
