@@ -1,4 +1,5 @@
 import { ActionPanel, Detail, List, Action, Icon, getPreferenceValues, environment } from "@raycast/api";
+import { useCachedState } from "@raycast/utils";
 
 import { useEffect, useState } from "react";
 import fetch from "node-fetch";
@@ -13,11 +14,12 @@ import {
   dbtModelShort,
   dbtGraphQLModelByEnv,
   dbtModelByEnv,
+  dbtProjectAnswer,
 } from "./types";
 
 export default function Command() {
-  const [listEnvs, setListEnvs] = useState<Array<dbtEnvWithName>>([]);
-  const [gitBaseURL, setGitBaseURL] = useState<string>('');
+  const [listEnvs, setListEnvs] = useCachedState<Array<dbtEnvWithName>>("list-envs", []);
+  const [gitBaseURL, setGitBaseURL] = useState<string>("");
 
   async function fetch_environments() {
     const apiKey = getPreferenceValues().dbtCloudAdminAPIKey;
@@ -47,21 +49,23 @@ export default function Command() {
     const apiKey = getPreferenceValues().dbtCloudAdminAPIKey;
     const accountId = getPreferenceValues().dbtCloudAccountID;
     const projectId = getPreferenceValues().dbtCloudProjectID;
-    const result = await fetch(
-      `https://cloud.getdbt.com/api/v3/accounts/${accountId}/projects/${projectId}/`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Token ${apiKey}`,
-        },
-      }
-    );
-    const results_json = (await result.json());
-    const URL = results_json.data.repository.remote_url.replace('git:', 'https:').replace('.git','/');
-    const subfolder = results_json.data.dbt_project_subdirectory === null ? '' : `/${results_json.data.dbt_project_subdirectory}`;
-    // console.log(results_json.data.dbt_project_subdirectory);
+    const result = await fetch(`https://cloud.getdbt.com/api/v3/accounts/${accountId}/projects/${projectId}/`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Token ${apiKey}`,
+      },
+    });
+    const results_json: dbtProjectAnswer = (await result.json()) as dbtProjectAnswer;
+
+    console.log(JSON.stringify(results_json.data.repository, null, 2));
+    const results_json_json = JSON.stringify(results_json, null);
+
+    const URL = results_json.data.repository.remote_url.replace("git:", "https:").replace(".git", "/");
+    const subfolder =
+      results_json.data.dbt_project_subdirectory === null ? "" : `/${results_json.data.dbt_project_subdirectory}`;
+
     console.log(URL + subfolder);
     setGitBaseURL(URL + subfolder);
     // return results_json;
@@ -69,8 +73,8 @@ export default function Command() {
 
   useEffect(() => {
     fetch_environments();
-    fetch_git_url()
-  },[]);
+    fetch_git_url();
+  }, []);
 
   return (
     <List
@@ -96,8 +100,14 @@ export default function Command() {
 // To get the list of models, we get the list of jobs and search for the models
 export function Models(props: { envId: string }) {
   const envId = props.envId;
-  const [listModels, setListModels] = useState<Array<dbtModelShort>>([]);
-  const [jobIdNameMapping, setJobIdNameMapping] = useState<Record<string, string>>({});
+  const [listModels, setListModels] = useCachedState<Array<dbtModelShort>>("list-models", [], {
+    cacheNamespace: envId,
+  });
+  const [jobIdNameMapping, setJobIdNameMapping] = useCachedState<Record<string, string>>(
+    "list-jobid-name",
+    {},
+    { cacheNamespace: envId }
+  );
 
   async function fetch_models() {
     const apiKey = getPreferenceValues().dbtCloudAdminAPIKey;
