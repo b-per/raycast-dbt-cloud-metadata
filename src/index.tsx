@@ -8,12 +8,8 @@ import { useEffect, useState } from "react";
 import fetch from "node-fetch";
 // import tablemark from "tablemark"
 
-
-
 const accountId = getPreferenceValues().dbtCloudAccountID;
 const projectId = getPreferenceValues().dbtCloudProjectID;
-
-
 
 import {
   dbtEnvWithName,
@@ -33,9 +29,8 @@ export default function Command() {
   const [gitBaseURL, setGitBaseURL] = useState<string>("");
 
   async function fetchEnvironments() {
-
-    const url_api = `https://cloud.getdbt.com/api/v3/accounts/${accountId}/projects/${projectId}/environments/`
-    const results_json: dbtEnvAnswer = await fetchCloudApiData(url_api) as dbtEnvAnswer;
+    const url_api = `https://cloud.getdbt.com/api/v3/accounts/${accountId}/projects/${projectId}/environments/`;
+    const results_json: dbtEnvAnswer = (await fetchCloudApiData(url_api)) as dbtEnvAnswer;
     setListEnvs(
       results_json.data.filter((e: dbtEnv) => e.type == "deployment").map((env) => ({ name: env.name, id: env.id }))
     );
@@ -44,9 +39,8 @@ export default function Command() {
 
   // TODO: Get the correct types
   async function fetchGitUrl() {
-
-    const url_api = `https://cloud.getdbt.com/api/v3/accounts/${accountId}/projects/${projectId}/`
-    const results_json: dbtProjectAnswer = await fetchCloudApiData(url_api) as dbtProjectAnswer;
+    const url_api = `https://cloud.getdbt.com/api/v3/accounts/${accountId}/projects/${projectId}/`;
+    const results_json: dbtProjectAnswer = (await fetchCloudApiData(url_api)) as dbtProjectAnswer;
 
     // console.log(JSON.stringify(results_json.data.repository, null, 2));
     const results_json_json = JSON.stringify(results_json, null);
@@ -87,4 +81,3 @@ export default function Command() {
 }
 
 // To get the list of models, we get the list of jobs and search for the models
-
