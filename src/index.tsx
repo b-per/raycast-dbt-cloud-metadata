@@ -1,8 +1,7 @@
-import { ActionPanel, Detail, List, Action, Icon, getPreferenceValues } from "@raycast/api";
+import { ActionPanel, List, Action, getPreferenceValues } from "@raycast/api";
 import { useCachedState } from "@raycast/utils";
 
 import { fetchCloudApiData, fetchMetadataApiData } from "./utils/fetchApis";
-import { generateChartURL } from "./utils/generateChartURL";
 
 import { useEffect, useState } from "react";
 import fetch from "node-fetch";
@@ -11,29 +10,17 @@ import fetch from "node-fetch";
 const accountId = getPreferenceValues().dbtCloudAccountID;
 const projectId = getPreferenceValues().dbtCloudProjectID;
 
-import {
-  dbtEnvWithName,
-  dbtEnvAnswer,
-  dbtEnv,
-  dbtJobsAnswer,
-  dbtGraphQLModelShort,
-  dbtModelShort,
-  dbtGraphQLModelByEnv,
-  dbtModelByEnv,
-  dbtProjectAnswer,
-} from "./types";
+import { dbtEnvAnswer, dbtEnv, dbtProjectAnswer } from "./types";
 import { Models } from "./components/models";
 
 export default function Command() {
-  const [listEnvs, setListEnvs] = useCachedState<Array<dbtEnvWithName>>("list-envs", []);
+  const [listEnvs, setListEnvs] = useCachedState<Array<dbtEnv>>("list-envs", []);
   const [gitBaseURL, setGitBaseURL] = useState<string>("");
 
   async function fetchEnvironments() {
     const url_api = `https://cloud.getdbt.com/api/v3/accounts/${accountId}/projects/${projectId}/environments/`;
     const results_json: dbtEnvAnswer = (await fetchCloudApiData(url_api)) as dbtEnvAnswer;
-    setListEnvs(
-      results_json.data.filter((e: dbtEnv) => e.type == "deployment").map((env) => ({ name: env.name, id: env.id }))
-    );
+    setListEnvs(results_json.data.filter((e: dbtEnv) => e.type == "deployment"));
     return results_json;
   }
 
@@ -49,7 +36,7 @@ export default function Command() {
     const subfolder =
       results_json.data.dbt_project_subdirectory === null ? "" : `/${results_json.data.dbt_project_subdirectory}`;
 
-    console.log(URL + subfolder);
+    // console.log(URL + subfolder);
     setGitBaseURL(URL + subfolder);
     // return results_json;
   }
@@ -71,7 +58,7 @@ export default function Command() {
           title={item.name}
           actions={
             <ActionPanel>
-              <Action.Push title="Show Details" target={<Models envId={`${item.id}`} />} />
+              <Action.Push title="Show Details" target={<Models env={item} />} />
             </ActionPanel>
           }
         />
