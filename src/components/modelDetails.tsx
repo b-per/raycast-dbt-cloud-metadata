@@ -1,13 +1,19 @@
 import { Action, ActionPanel, Detail, getPreferenceValues, Icon, List } from "@raycast/api";
-import { dbtGraphQLModelByEnv, dbtModelByEnv } from "../types";
+import { dbtEnv, dbtGraphQLModelByEnv, dbtModelByEnv, dbtModelShort } from "../types";
 import { fetchMetadataApiData } from "../utils/fetchApis";
 import { useEffect, useState } from "react";
 import { generateChartURL } from "../utils/generateChartURL";
 import { ListParentChildren } from "./listParentChildren";
 
-export function ModelDetails(props: { envId: string; uniqueId: string; jobIdNameMapping: Record<string, string> }) {
-  const envId = props.envId;
-  const uniqueId = props.uniqueId;
+export function ModelDetails(props: {
+  env: dbtEnv;
+  model: dbtModelShort;
+  jobIdNameMapping: Record<string, string>;
+  listModels: Array<dbtModelShort>;
+}) {
+  const env = props.env;
+  const model = props.model;
+  const listModels = props.listModels;
   const jobIdNameMapping = props.jobIdNameMapping;
 
   const [modelDetails, setModelDetails] = useState<Array<dbtModelByEnv>>([]);
@@ -16,8 +22,8 @@ export function ModelDetails(props: { envId: string; uniqueId: string; jobIdName
   async function fetchModelDetails() {
     const graphql_query = `{
         modelByEnvironment(
-            environmentId: ${envId},
-            uniqueId: "${uniqueId}",
+            environmentId: ${env.id},
+            uniqueId: "${model.uniqueId}",
             lastRunCount:10,
             withCatalog: false
         ){
@@ -32,6 +38,7 @@ export function ModelDetails(props: { envId: string; uniqueId: string; jobIdName
             jobId,
             runGeneratedAt,
             childrenL1,
+            dependsOn,
             parentsModels {
               uniqueId
             }
@@ -43,7 +50,7 @@ export function ModelDetails(props: { envId: string; uniqueId: string; jobIdName
         }`;
     const resultJSON = (await fetchMetadataApiData(graphql_query)) as dbtGraphQLModelByEnv;
 
-    // console.log(resultJSON.data.modelByEnvironment.map(e => e.tests));
+    console.log(resultJSON.data.modelByEnvironment.map((e) => e.dependsOn));
     // console.log(resultJSON.data.modelByEnvironment.map(e => e.childrenL1));
     setModelDetails(resultJSON.data.modelByEnvironment);
     setIsLoading(false);
@@ -53,7 +60,7 @@ export function ModelDetails(props: { envId: string; uniqueId: string; jobIdName
 
   useEffect(() => {
     fetchModelDetails();
-  }, [envId, uniqueId]);
+  }, [env, model]);
 
   // jobs are not sorted properly in the API, sorting them here
   modelDetails.sort(function (a, b) {
@@ -104,7 +111,7 @@ export function ModelDetails(props: { envId: string; uniqueId: string; jobIdName
     "incr.",
     "other",
   ]);
-  console.log(full_url);
+  // console.log(full_url);
 
   const nbTestsPass = reversedModelDetails.map((d) => d.tests.filter((e) => e.state == "pass").length);
   const nbTestsFail = reversedModelDetails.map((d) => d.tests.filter((e) => e.state == "fail").length);
@@ -120,6 +127,8 @@ export function ModelDetails(props: { envId: string; uniqueId: string; jobIdName
     ["pass", "fail", "skipped", "other"]
   );
 
+  const customBranch = env.use_custom_branch ? env.custom_branch : "main";
+  const gitURL = env.project.repository.remote_url.replace("git://", "https://").replace(".git", "");
   // console.log(modelDetails !== undefined ? modelDetails[0].childrenL1 : 'undefined');
   // const children = modelDetails[0].childrenL1.filter(e => e.startsWith("model."));
   // const children = runIDs[0].childrenL1;
@@ -145,7 +154,7 @@ export function ModelDetails(props: { envId: string; uniqueId: string; jobIdName
       navigationTitle="Model Details"
       metadata={
         <Detail.Metadata>
-          <Detail.Metadata.Label title="Model" text={uniqueId} />
+          <Detail.Metadata.Label title="Model" text={model.uniqueId} />
           <Detail.Metadata.Label
             title="Last refreshed (UTC)"
             text={`${modelDetails
@@ -153,7 +162,7 @@ export function ModelDetails(props: { envId: string; uniqueId: string; jobIdName
               ?.executeCompletedAt.substring(0, 16)
               .replace("T", " ")}`}
           />
-          <Detail.Metadata.Label title="Current Materialization" text={modelDetails[0].materializedType} />
+          {/* <Detail.Metadata.Label title="Current Materialization" text={modelDetails[0].materializedType} /> */}
           <Detail.Metadata.Label
             title="Current Number of Tests"
             text={modelDetails[0].tests.map((e) => e.name).length.toString()}
@@ -161,7 +170,7 @@ export function ModelDetails(props: { envId: string; uniqueId: string; jobIdName
           <Detail.Metadata.Separator />
           <Detail.Metadata.Link
             title="Docs"
-            target={`https://cloud.getdbt.com/accounts/${dbt_cloud_account}/jobs/${modelDetails[0].jobId}/docs/#!/model/${uniqueId}`}
+            target={`https://cloud.getdbt.com/accounts/${dbt_cloud_account}/jobs/${modelDetails[0].jobId}/docs/#!/model/${model.uniqueId}`}
             text={`Docs for the last job`}
           />
           <Detail.Metadata.Link
@@ -169,13 +178,20 @@ export function ModelDetails(props: { envId: string; uniqueId: string; jobIdName
             target={`${runsDetails[0].runLink}`}
             text={`${runsDetails[0].runId}`}
           />
+          {!model.root_path.includes("/dbt_packages/") ? (
+            <Detail.Metadata.Link
+              title="Docs"
+              target={`${gitURL}/blob/${customBranch}/${model.path}`}
+              text={`Link to git`}
+            />
+          ) : null}
         </Detail.Metadata>
       }
       actions={
         <ActionPanel>
           <Action.OpenInBrowser
             title="Open Docs in Browser"
-            url={`https://cloud.getdbt.com/accounts/${dbt_cloud_account}/jobs/${modelDetails[0].jobId}/docs/#!/model/${uniqueId}`}
+            url={`https://cloud.getdbt.com/accounts/${dbt_cloud_account}/jobs/${modelDetails[0].jobId}/docs/#!/model/${model.uniqueId}`}
             icon={Icon.QuoteBlock}
             shortcut={{ modifiers: ["cmd"], key: "d" }}
           />
@@ -185,15 +201,31 @@ export function ModelDetails(props: { envId: string; uniqueId: string; jobIdName
             shortcut={{ modifiers: ["cmd", "shift"], key: "r" }}
             icon={Icon.PlayFilled}
           />
+          {!model.root_path.includes("/dbt_packages/") ? (
+            <Action.OpenInBrowser
+            title="Open Model in git"
+            url={`${gitURL}/blob/${customBranch}/${model.path}`}
+            shortcut={{ modifiers: ["cmd",], key: "g" }}
+            icon={Icon.CodeBlock}
+          />
+          ) : null}
+
           {modelDetails[0].childrenL1.length || modelDetails[0].parentsModels.length > 0 ? (
             <Action.Push
               title="See Parents and  Children"
               target={
                 <ListParentChildren
-                  envId={envId}
-                  children={[...new Set(modelDetails[0].childrenL1.filter((e) => e.startsWith("model.")))]}
-                  parents={modelDetails[0].parentsModels.map((e) => e.uniqueId)}
-                  model={uniqueId}
+                  env={env}
+                  children={listModels.filter((e) =>
+                    modelDetails[0].childrenL1.filter((e) => e.startsWith("model.")).includes(e.uniqueId)
+                  )}
+                  // parents={listModels.filter(e => (modelDetails[0].dependsOn.filter((e) => e.startsWith("model.")).includes(e.uniqueId)))}
+                  parents={listModels.filter((e) =>
+                    modelDetails[0].parentsModels.map((e) => e.uniqueId).includes(e.uniqueId)
+                  )}
+                  directParentsUniqueId={modelDetails[0].dependsOn.filter((e) => e.startsWith("model."))}
+                  model={model.uniqueId}
+                  listModels={listModels}
                   jobIdNameMapping={jobIdNameMapping}
                 />
               }
@@ -202,10 +234,6 @@ export function ModelDetails(props: { envId: string; uniqueId: string; jobIdName
           ) : (
             ""
           )}
-          {/* <Action.CopyToClipboard
-              title="Copy Pull Request URL"
-              content="https://github.com/raycast/extensions/pull/1"
-            /> */}
         </ActionPanel>
       }
     />
@@ -215,7 +243,7 @@ export function ModelDetails(props: { envId: string; uniqueId: string; jobIdName
     <Detail
       navigationTitle="Details of the Model"
       isLoading={false}
-      markdown={`## ❌ No details ❌\n${props.uniqueId} never ran on this environment`}
+      markdown={`## ❌ No details ❌\n${model.name} never ran on this environment`}
     />
   );
 }
