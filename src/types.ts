@@ -57,7 +57,12 @@ export interface dbtEnv {
   state: number;
   created_at: string;
   updated_at: string;
-  project: [unknown];
+  project: {
+    repository: {
+      remote_url: string;
+      remote_backend: string;
+    };
+  };
   jobs: string;
   credentials: string;
   custom_environment_variables: string;
@@ -117,6 +122,8 @@ export interface dbtModelShort {
   name: string;
   materializedType: string;
   packageName: string;
+  path: string;
+  root_path: string;
 }
 
 export interface dbtGraphQLModelShort {
@@ -137,6 +144,7 @@ export interface dbtModelByEnv {
   jobId: number;
   runGeneratedAt: string;
   childrenL1: Array<string>;
+  dependsOn: Array<string>;
   parentsModels: Array<{
     uniqueId: string;
   }>;
@@ -217,4 +225,35 @@ export interface dbtProjectAnswer {
     developer_message: string;
   };
   data: dbtProject;
+}
+
+export interface dbtRunsAnswer {
+  status: {
+    code: number;
+    is_success: boolean;
+    user_message: string;
+    developer_message: string;
+  };
+  data: [
+    {
+      id: number;
+    }
+  ];
+}
+
+// expand
+export interface dbtManifest {
+  nodes: Record<string, dbtManifestModel>;
+}
+
+export interface dbtManifestModel {
+  unique_id: string;
+  name: string;
+  config: {
+    materialized: string;
+  };
+  package_name: string;
+  original_file_path: string;
+  root_path: string;
+  resource_type: string;
 }
