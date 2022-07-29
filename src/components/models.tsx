@@ -1,26 +1,36 @@
 import { Action, ActionPanel, getPreferenceValues, Icon, List } from "@raycast/api";
 import { fetchCloudApiData, fetchMetadataApiData } from "../utils/fetchApis";
 import { useEffect, useState } from "react";
-import { dbtGraphQLModelShort, dbtJobsAnswer, dbtModelShort } from "../types";
+import {
+  dbtEnv,
+  dbtGraphQLModelShort,
+  dbtJobsAnswer,
+  dbtManifest,
+  dbtManifestModel,
+  dbtModelShort,
+  dbtRunsAnswer,
+} from "../types";
 import { useCachedState } from "@raycast/utils";
 import { ModelDetails } from "./modelDetails";
 
 const accountId = getPreferenceValues().dbtCloudAccountID;
 const projectId = getPreferenceValues().dbtCloudProjectID;
 
-export function Models(props: { envId: string }) {
-  const envId = props.envId;
+export function Models(props: { env: dbtEnv }) {
+  const env = props.env;
   const [listModels, setListModels] = useCachedState<Array<dbtModelShort>>("list-models", [], {
-    cacheNamespace: envId,
+    cacheNamespace: String(env.id),
   });
+  // const [listModels, setListModels] = useState<Array<dbtModelShort>>([]);
   const [jobIdNameMapping, setJobIdNameMapping] = useCachedState<Record<string, string>>(
     "list-jobid-name",
     {},
-    { cacheNamespace: envId }
+    { cacheNamespace: String(env.id) }
   );
   const [selectedPackage, setSelectedPackage] = useState<string>("All");
 
   async function fetchModels() {
+    // // BPER V1 with metadata
     const url_api = `https://cloud.getdbt.com/api/v2/accounts/${accountId}/jobs/?project_id=${encodeURIComponent(
       projectId
     )}`;
@@ -29,27 +39,33 @@ export function Models(props: { envId: string }) {
     // We loop through the list and crate a dict with id as the key and name as the value
     setJobIdNameMapping(Object.assign({}, ...results_json.data.map((x) => ({ [x.id]: x.name }))));
 
-    const job_ids = results_json.data.map((env) => env.id);
 
-    // TODO: Check if we need to loop through jobs?
-    const graphql_query = `{
-        models(
-            jobId: ${job_ids[0]},
-        ){
-            uniqueId,
-            name,
-            materializedType,
-            packageName
-            }
-        }`;
-    const resultGQLJSON = (await fetchMetadataApiData(graphql_query)) as dbtGraphQLModelShort;
+    const urlAPIRuns =
+      `https://cloud.getdbt.com/api/v4/accounts/${accountId}/runs?` + encodeURI(`project=${projectId}`);
+    const resultsAPIRuns = (await fetchCloudApiData(urlAPIRuns)) as dbtRunsAnswer;
+    const runId = resultsAPIRuns.data[0].id;
 
-    setListModels(resultGQLJSON.data.models);
+    const urlAPIManifest = `https://cloud.getdbt.com/api/v2/accounts/${accountId}/runs/${runId}/artifacts/manifest.json`;
+
+    const resultAPIManifest = (await fetchCloudApiData(urlAPIManifest)) as dbtManifest;
+
+    const ListModelManifest = Object.entries(resultAPIManifest.nodes) as Array<[string, dbtManifestModel]>;
+    console.log(ListModelManifest[0]);
+    const calcListModels = ListModelManifest.filter(([k, v]) => v.resource_type == "model").map(([k, v]) => ({
+      uniqueId: v.unique_id,
+      name: v.name,
+      materializedType: v.config.materialized,
+      packageName: v.package_name,
+      path: v.original_file_path,
+      root_path: v.root_path,
+    }));
+
+    setListModels(calcListModels);
   }
 
   useEffect(() => {
     fetchModels();
-  }, [envId]);
+  }, [env]);
 
   return (
     // Put into its own component
@@ -85,7 +101,9 @@ export function Models(props: { envId: string }) {
               <ActionPanel>
                 <Action.Push
                   title="Show Details"
-                  target={<ModelDetails envId={envId} uniqueId={item.uniqueId} jobIdNameMapping={jobIdNameMapping} />}
+                  target={
+                    <ModelDetails env={env} model={item} jobIdNameMapping={jobIdNameMapping} listModels={listModels} />
+                  }
                 />
               </ActionPanel>
             }
