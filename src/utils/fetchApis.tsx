@@ -7,7 +7,6 @@ export async function fetchCloudApiData(api_url: string) {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
-      Accept: "application/json",
       Authorization: `Token ${apiKey}`,
     },
   });
