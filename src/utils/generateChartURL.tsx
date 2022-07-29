@@ -21,7 +21,7 @@ export function generateChartURL(
     `chdl=${legend.join("|")}`, // label names
     `chdls=${colorLabel}`, // label style
     `chf=a,s,00000000`, // transparent background
-    `chtt${title}`, // title name
+    `chtt=${title}`, // title name
     `chts=${colorLabel},20`, //title style
   ];
 
