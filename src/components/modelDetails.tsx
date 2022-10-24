@@ -10,11 +10,13 @@ export function ModelDetails(props: {
   model: dbtModelShort;
   jobIdNameMapping: Record<string, string>;
   listModels: Array<dbtModelShort>;
+  projectId: number
 }) {
   const env = props.env;
   const model = props.model;
   const listModels = props.listModels;
   const jobIdNameMapping = props.jobIdNameMapping;
+  const projectId = props.projectId;
 
   const [modelDetails, setModelDetails] = useState<Array<dbtModelByEnv>>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -50,9 +52,10 @@ export function ModelDetails(props: {
         }`;
     const resultJSON = (await fetchMetadataApiData(graphql_query)) as dbtGraphQLModelByEnv;
 
-    console.log(resultJSON.data.modelByEnvironment.map((e) => e.dependsOn));
+    console.log(resultJSON);
+    // console.log(resultJSON.data.modelByEnvironment.map((e) => e.dependsOn));
     // console.log(resultJSON.data.modelByEnvironment.map(e => e.childrenL1));
-    setModelDetails(resultJSON.data.modelByEnvironment);
+    setModelDetails(resultJSON === undefined ? [] : resultJSON.data.modelByEnvironment);
     setIsLoading(false);
 
     return resultJSON;
@@ -94,7 +97,7 @@ export function ModelDetails(props: {
   );
 
   const dbt_cloud_account = getPreferenceValues().dbtCloudAccountID;
-  const dbt_cloud_project = getPreferenceValues().dbtCloudProjectID;
+  const dbt_cloud_project = projectId
 
   const runsDetails = modelDetails.map((d) => ({
     jobId: `${d.jobId}`,
@@ -227,6 +230,7 @@ export function ModelDetails(props: {
                   model={model.uniqueId}
                   listModels={listModels}
                   jobIdNameMapping={jobIdNameMapping}
+                  projectId={projectId}
                 />
               }
               icon={Icon.Code}

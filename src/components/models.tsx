@@ -14,16 +14,15 @@ import { useCachedState } from "@raycast/utils";
 import { ModelDetails } from "./modelDetails";
 
 const accountId = getPreferenceValues().dbtCloudAccountID;
-const projectId = getPreferenceValues().dbtCloudProjectID;
+// const projectId = getPreferenceValues().dbtCloudProjectID;
 
-export function Models(props: { env: dbtEnv }) {
+export function Models(props: { env: dbtEnv, projectID: number }) {
   const env = props.env;
-  const [listModels, setListModels] = useCachedState<Array<dbtModelShort>>("list-models", [], {
-    cacheNamespace: String(env.id),
-  });
+  const projectId = props.projectID;
+  const [listModels, setListModels] = useCachedState<Array<dbtModelShort>>(`models-for-proj-${projectId}-for-env-${env.id}`, []);
   // const [listModels, setListModels] = useState<Array<dbtModelShort>>([]);
   const [jobIdNameMapping, setJobIdNameMapping] = useCachedState<Record<string, string>>(
-    "list-jobid-name",
+    `list-jobid-name-for-proj-${projectId}`,
     {},
     { cacheNamespace: String(env.id) }
   );
@@ -102,7 +101,7 @@ export function Models(props: { env: dbtEnv }) {
                 <Action.Push
                   title="Show Details"
                   target={
-                    <ModelDetails env={env} model={item} jobIdNameMapping={jobIdNameMapping} listModels={listModels} />
+                    <ModelDetails env={env} model={item} jobIdNameMapping={jobIdNameMapping} listModels={listModels} projectId={projectId}/>
                   }
                 />
               </ActionPanel>

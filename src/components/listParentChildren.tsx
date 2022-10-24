@@ -10,6 +10,7 @@ export function ListParentChildren(props: {
   listModels: Array<dbtModelShort>;
   jobIdNameMapping: Record<string, string>;
   directParentsUniqueId: Array<string>;
+  projectId: number;
 }) {
   const env = props.env;
   const children = props.children;
@@ -18,6 +19,7 @@ export function ListParentChildren(props: {
   const listModels = props.listModels;
   const jobIdNameMapping = props.jobIdNameMapping;
   const directParentsUniqueId = props.directParentsUniqueId;
+  const projectId = props.projectId;
 
   return (
     <List navigationTitle={`Dependencies of ${model}`}>
@@ -34,7 +36,7 @@ export function ListParentChildren(props: {
                 <Action.Push
                   title="Show Details"
                   target={
-                    <ModelDetails env={env} model={node} jobIdNameMapping={jobIdNameMapping} listModels={listModels} />
+                    <ModelDetails env={env} model={node} jobIdNameMapping={jobIdNameMapping} listModels={listModels} projectId={projectId}/>
                   }
                 />
               </ActionPanel>
@@ -54,7 +56,7 @@ export function ListParentChildren(props: {
                 <Action.Push
                   title="Show Details"
                   target={
-                    <ModelDetails env={env} model={node} jobIdNameMapping={jobIdNameMapping} listModels={listModels} />
+                    <ModelDetails env={env} model={node} jobIdNameMapping={jobIdNameMapping} listModels={listModels} projectId={projectId} />
                   }
                 />
               </ActionPanel>
