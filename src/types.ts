@@ -237,6 +237,7 @@ export interface dbtRunsAnswer {
   data: [
     {
       id: number;
+      finished_at: number;
     }
   ];
 }

@@ -35,14 +35,16 @@ export function Models(props: { env: dbtEnv, projectID: number }) {
     )}`;
     const results_json: dbtJobsAnswer = (await fetchCloudApiData(url_api)) as dbtJobsAnswer;
 
-    // We loop through the list and crate a dict with id as the key and name as the value
+    // We loop through the list and create a dict with id as the key and name as the value
     setJobIdNameMapping(Object.assign({}, ...results_json.data.map((x) => ({ [x.id]: x.name }))));
 
 
     const urlAPIRuns =
       `https://cloud.getdbt.com/api/v4/accounts/${accountId}/runs?` + encodeURI(`project=${projectId}`);
     const resultsAPIRuns = (await fetchCloudApiData(urlAPIRuns)) as dbtRunsAnswer;
-    const runId = resultsAPIRuns.data[0].id;
+
+    // We get the last job that has finished (which means it will have artefacts)
+    const runId = resultsAPIRuns.data.filter((x) => x.finished_at !== null)[0].id;
 
     const urlAPIManifest = `https://cloud.getdbt.com/api/v2/accounts/${accountId}/runs/${runId}/artifacts/manifest.json`;
 
