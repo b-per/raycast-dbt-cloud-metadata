@@ -11,7 +11,7 @@ export function generateChartURL(
   const colorLabel: string = environment.theme == "dark" ? "FFFFFF" : "000000";
 
   const params = [
-    `chd=t:` + `${dataSeries.map((e) => e.join(",")).join("|")}`,
+    `chd=a:` + `${dataSeries.map((e) => e.join(",")).join("|")}`,
     `chco=FF6849,195050,262A38,F1F1F1`, // color for the different data
     `chxt=x,y`, // axis types
     `chxl=0:|` + dataLabels.join("|"), // x axis values
