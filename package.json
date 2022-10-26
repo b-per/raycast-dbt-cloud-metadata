@@ -38,13 +38,13 @@
   ],
   "commands": [
     {
-      "name": "index",
+      "name": "showModelDetailsFavoriteProject",
       "title": "Show Models Details - Favorite Project",
       "description": "Template for showing a static list and a detail view",
       "mode": "view"
     },
     {
-      "name": "index2",
+      "name": "showModelDetailsAllProjects",
       "title": "Show Models Details - All Projects",
       "description": "Template for showing a static list and a detail view",
       "mode": "view"
